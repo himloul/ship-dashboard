@@ -1,0 +1,140 @@
+library(shiny)
+library(shinyWidgets)
+library(shiny.semantic)
+library(leaflet)
+library(dplyr)
+library(magrittr)
+library(htmltools)
+library(htmlwidgets)
+library(geosphere)
+
+ships = base::readRDS("ships.rds")
+
+#### Grid template ####
+
+myGridTemplate <- grid_template(
+  
+  default = list(
+    areas = rbind(c("title", "map"), c("user", "map")),
+    cols_width = c("300px", "1fr"),
+    rows_height = c("60px", "auto", "150px")
+  ),
+  
+  mobile = list(
+    areas = rbind("title", "user", "map"),
+    rows_height = c("70px", "400px", "auto"),
+    cols_width = c("100%")
+  )
+  
+)
+
+#### UI ####
+ui <- 
+  semanticPage(
+    setBackgroundColor("#f0ebe1"),
+    tags$style(type = "text/css", "#Map {height: calc(110vh - 100px) !important;}"),
+    
+    grid(grid_template = myGridTemplate,
+         area_styles = list(title = "margin: 20px;", map = "margin: 0px;", user = "margin: 20px;"),
+         
+         title = h2(class = "ui header", icon("anchor"), div(class = "content", "Ship dashboard")),
+         
+         map = leafletOutput(outputId = "Map", width = "100%", height = "200%"),
+         
+         user = div(
+           
+           card(
+             style = "border-radius: 0; width: 100%",
+             div(class = "content",
+             p("Vessel type"),
+             dropdown_input("vessel_type", choices = sort(unique(ships$SHIPTYPE)), value = 0), br(),
+             p("Vessel name"),
+             dropdown_input("vessel_name", choices = unique(ships[ships$SHIPTYPE == 7,]$SHIPNAME), value = "VTS HEL")
+             )),
+           
+           card(
+             style = "border-radius: 0; width: 100%",
+             div(class = "content", 
+                 div(class = "header", "Ship's sailed distance"), 
+                 div(class = "meta", "Distance in meters"),
+                 div(class = "description", h2(textOutput("Distance")))))
+           )
+      )
+    )
+
+#### Server ####
+server <- function(input, output, session) { 
+  
+  observe({
+    x <- input$vessel_type
+    
+    # Can use character(0) to remove all choices
+    if (is.null(x))
+      x <- character(0)
+    
+    # Can also set the label and select items
+    updateSelectInput(session, "vessel_name",
+                      label = paste("Select vessel name", x),
+                      choices = unique(ships[ships$SHIPTYPE == x,]$SHIPNAME),
+                      selected = tail(x, 1)
+    )
+  })
+   
+  #'[DATA]
+  df3 = reactive({
+    # 3 
+    # For the vessel selected, find the observation when it sailed the longest distance between two consecutive observations.
+    # If there is a situation when a vessel moves exactly the same amount of meters, please select the most recent.
+    
+    df2 = 
+      ships[ships$SHIPNAME == input$vessel_name,] %>%
+      group_by(SHIP_ID) %>%
+      mutate(dist = distHaversine(cbind(LON, LAT), cbind(lead(LON), lead(LAT)))) %>% # calculate the distance between two consecutive observations
+      filter(dist != 0) # select the most recent observation, if there is no movement detected.
+    
+    # df2 %>% slice(which.max(dist))
+    df3 = df2[which.max(df2$dist):(which.max(df2$dist)+1),]
+  })
+  
+  output$Distance = renderText({paste(round(df3()$dist[1], 0), "m")})
+  
+  #'[MAP]
+  map = reactive({
+    
+    df3 = df3()
+    # Initialize the map
+    map = leaflet() %>% addTiles()
+    
+    style = "<div style=\'font-family:Trebuchet MS, sans-serif; color: #003366; font-size:15\'>
+    <span style='color:#7d7d7d'>&#9972 Ship's Name</span>
+    <br/>%s<br/>
+    <span style='color:#7d7d7d'>Date & Time</span>
+    <br/>%s
+    </i></div>"
+    
+    map %>% 
+      addCircleMarkers(data = df3[1,], lng = df3[1,]$LON, lat = df3[1,]$LAT,
+                       fillColor = "#00b2a9",
+                       fillOpacity = 0.9, 
+                       stroke = TRUE, 
+                       color = "gray", 
+                       weight = 1,
+                       label = ~sprintf(style, df3[1,]$SHIPNAME, df3[1,]$DATETIME) %>% lapply(htmltools::HTML)) %>%
+      
+      addCircleMarkers(data = df3[2,], lng = df3[2,]$LON, lat = df3[2,]$LAT,
+                       fillColor = "#de5272",
+                       fillOpacity = 0.9, 
+                       stroke = TRUE, 
+                       color = "gray", 
+                       weight = 1,
+                       label = ~sprintf(style, df3[2,]$SHIPNAME, df3[2,]$DATETIME) %>% lapply(htmltools::HTML)) %>%
+      
+      addLegend("bottomright", colors = c("#00b2a9", "#de5272"), labels = c("Start", "End"), opacity = 1)
+    
+    }) # end Map
+  
+  output$Map = renderLeaflet({map()})
+  
+}
+
+shinyApp(ui = ui, server = server)
