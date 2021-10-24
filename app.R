@@ -55,7 +55,7 @@ ui <-
            card(
              style = "border-radius: 0; width: 100%",
              div(class = "content", 
-                 div(class = "header", "Ship's sailed distance"), 
+                 div(class = "header", "Ship's max sailed distance"), 
                  div(class = "meta", "Distance in meters"),
                  div(class = "description", h2(textOutput("Distance")))))
            )
@@ -86,7 +86,8 @@ server <- function(input, output, session) {
     # For the vessel selected, find the observation when it sailed the longest distance between two consecutive observations.
     # If there is a situation when a vessel moves exactly the same amount of meters, please select the most recent.
     
-    df2 = ships[ships$SHIPNAME == input$vessel_name,] %>%
+    df2 = 
+      ships[ships$SHIPNAME == input$vessel_name,] %>%
       arrange(desc(DATETIME)) %>% # select the most recent observation, if there is same sailed distance.
       mutate(dist = distHaversine(cbind(LON, LAT), cbind(lead(LON), lead(LAT)))) # calculate the distance between two consecutive observations
     
@@ -94,7 +95,7 @@ server <- function(input, output, session) {
     df = df2[which.max(df2$dist):(which.max(df2$dist)+1),]
   })
   
-  output$Distance = renderText({paste(round(df3()$dist[1], 0), "m")})
+  output$Distance = renderText({paste(round(df()$dist[1], 0), "m")})
   
   #'[MAP]
   map = reactive({
@@ -111,21 +112,21 @@ server <- function(input, output, session) {
     </i></div>"
     
     map %>% 
-      addCircleMarkers(data = df3[1,], lng = df3[1,]$LON, lat = df3[1,]$LAT,
-                       fillColor = "#00b2a9",
-                       fillOpacity = 0.9, 
-                       stroke = TRUE, 
-                       color = "gray", 
-                       weight = 1,
-                       label = ~sprintf(style, df3[1,]$SHIPNAME, df3[1,]$DATETIME) %>% lapply(htmltools::HTML)) %>%
-      
-      addCircleMarkers(data = df3[2,], lng = df3[2,]$LON, lat = df3[2,]$LAT,
+      addCircleMarkers(data = df[1,], lng = df[1,]$LON, lat = df[1,]$LAT,
                        fillColor = "#de5272",
                        fillOpacity = 0.9, 
                        stroke = TRUE, 
                        color = "gray", 
                        weight = 1,
-                       label = ~sprintf(style, df3[2,]$SHIPNAME, df3[2,]$DATETIME) %>% lapply(htmltools::HTML)) %>%
+                       label = ~sprintf(style, df[1,]$SHIPNAME, df[1,]$DATETIME) %>% lapply(htmltools::HTML)) %>%
+      
+      addCircleMarkers(data = df[2,], lng = df[2,]$LON, lat = df[2,]$LAT,
+                       fillColor = "#00b2a9",
+                       fillOpacity = 0.9, 
+                       stroke = TRUE, 
+                       color = "gray", 
+                       weight = 1,
+                       label = ~sprintf(style, df[2,]$SHIPNAME, df[2,]$DATETIME) %>% lapply(htmltools::HTML)) %>%
       
       addLegend("bottomright", colors = c("#00b2a9", "#de5272"), labels = c("Start", "End"), opacity = 1)
     
