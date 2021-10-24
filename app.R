@@ -8,7 +8,7 @@ library(htmltools)
 library(htmlwidgets)
 library(geosphere)
 
-ships = base::readRDS("ships.rds")
+ships = readRDS("ships.rds")
 
 #### Grid template ####
 
@@ -75,25 +75,23 @@ server <- function(input, output, session) {
     # Can also set the label and select items
     updateSelectInput(session, "vessel_name",
                       label = paste("Select vessel name", x),
-                      choices = unique(ships[ships$SHIPTYPE == x,]$SHIPNAME),
+                      choices = sort(unique(ships[ships$SHIPTYPE == x,]$SHIPNAME)),
                       selected = tail(x, 1)
     )
   })
    
   #'[DATA]
-  df3 = reactive({
+  df = reactive({
     # 3 
     # For the vessel selected, find the observation when it sailed the longest distance between two consecutive observations.
     # If there is a situation when a vessel moves exactly the same amount of meters, please select the most recent.
     
-    df2 = 
-      ships[ships$SHIPNAME == input$vessel_name,] %>%
-      group_by(SHIP_ID) %>%
-      mutate(dist = distHaversine(cbind(LON, LAT), cbind(lead(LON), lead(LAT)))) %>% # calculate the distance between two consecutive observations
-      filter(dist != 0) # select the most recent observation, if there is no movement detected.
+    df2 = ships[ships$SHIPNAME == input$vessel_name,] %>%
+      arrange(desc(DATETIME)) %>% # select the most recent observation, if there is same sailed distance.
+      mutate(dist = distHaversine(cbind(LON, LAT), cbind(lead(LON), lead(LAT)))) # calculate the distance between two consecutive observations
     
     # df2 %>% slice(which.max(dist))
-    df3 = df2[which.max(df2$dist):(which.max(df2$dist)+1),]
+    df = df2[which.max(df2$dist):(which.max(df2$dist)+1),]
   })
   
   output$Distance = renderText({paste(round(df3()$dist[1], 0), "m")})
@@ -101,7 +99,7 @@ server <- function(input, output, session) {
   #'[MAP]
   map = reactive({
     
-    df3 = df3()
+    df = df()
     # Initialize the map
     map = leaflet() %>% addTiles()
     

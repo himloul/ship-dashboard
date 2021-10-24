@@ -1,0 +1,12 @@
+name: appsilon_test
+title: appsilon_test
+username:
+account: gosight
+server: shinyapps.io
+hostUrl: https://api.shinyapps.io/v1
+appId: 4944681
+bundleId: 5172118
+url: https://himloul.shinyapps.io/appsilon_test/
+when: 1635094043.22874
+asMultiple: FALSE
+asStatic: FALSE
