@@ -47,9 +47,9 @@ ui <-
              style = "border-radius: 0; width: 100%",
              div(class = "content",
              p("Vessel type"),
-             dropdown_input("vessel_type", choices = sort(unique(ships$SHIPTYPE)), value = 0), br(),
+             dropdown_input("vessel_type", choices = sort(unique(ships$ship_type)), value = 0), br(),
              p("Vessel name"),
-             dropdown_input("vessel_name", choices = unique(ships[ships$SHIPTYPE == 7,]$SHIPNAME), value = "VTS HEL")
+             dropdown_input("vessel_name", choices = unique(ships[ships$ship_type == 7,]$SHIPNAME), value = "VTS HEL")
              )),
            
            card(
@@ -75,7 +75,7 @@ server <- function(input, output, session) {
     # Can also set the label and select items
     updateSelectInput(session, "vessel_name",
                       label = paste("Select vessel name", x),
-                      choices = sort(unique(ships[ships$SHIPTYPE == x,]$SHIPNAME)),
+                      choices = sort(unique(ships[ships$ship_type == x,]$SHIPNAME)),
                       selected = tail(x, 1)
     )
   })

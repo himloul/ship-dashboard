@@ -5,8 +5,9 @@ account: gosight
 server: shinyapps.io
 hostUrl: https://api.shinyapps.io/v1
 appId: 4944681
-bundleId: 5172118
+bundleId: 5172467
 url: https://himloul.shinyapps.io/appsilon_test/
-when: 1635094043.22874
+when: 1635109180.60434
 asMultiple: FALSE
 asStatic: FALSE
+ignoredFiles: test.R|tests/testthat.R
