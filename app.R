@@ -94,7 +94,7 @@ server <- function(input, output, session) {
     df2 = 
       ships[ships$SHIPNAME == input$vessel_name,] %>%
       arrange(desc(DATETIME)) %>% # select the most recent observation, if there is same sailed distance.
-      mutate(dist = distHaversine(cbind(LON, LAT), cbind(lead(LON), lead(LAT)))) # calculate the distance between two consecutive observations
+      mutate(dist = distHaversine(cbind(LON, LAT), cbind(lead(LON), lead(LAT)))) # calculate the Haversine distance between two consecutive locations.
     
     # df2 %>% slice(which.max(dist))
     df = df2[which.max(df2$dist):(which.max(df2$dist)+1),]
