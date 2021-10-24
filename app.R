@@ -1,11 +1,11 @@
 library(shiny)
 library(shinyWidgets)
 library(shiny.semantic)
+library(htmltools)
 library(leaflet)
+
 library(dplyr)
 library(magrittr)
-library(htmltools)
-library(htmlwidgets)
 library(geosphere)
 
 # import the dataset (rds format for a fast reading).
