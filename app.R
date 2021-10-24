@@ -11,6 +11,8 @@ library(geosphere)
 # import the dataset (rds format for a fast reading).
 ships = readRDS("ships.rds")
 
+testthat::expect_is(ships, "data.frame")
+
 #### Grid template ####
 
 myGridTemplate <- grid_template(
@@ -62,6 +64,8 @@ ui <-
            )
       )
     )
+
+
 
 #### Server ####
 server <- function(input, output, session) { 
