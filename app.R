@@ -8,6 +8,7 @@ library(htmltools)
 library(htmlwidgets)
 library(geosphere)
 
+# import the dataset (rds format for a fast reading).
 ships = readRDS("ships.rds")
 
 #### Grid template ####
@@ -101,9 +102,11 @@ server <- function(input, output, session) {
   map = reactive({
     
     df = df()
+    
     # Initialize the map
     map = leaflet() %>% addTiles()
     
+    # Label's HTML style
     style = "<div style=\'font-family:Trebuchet MS, sans-serif; color: #003366; font-size:15\'>
     <span style='color:#7d7d7d'>&#9972 Ship's Name</span>
     <br/>%s<br/>
@@ -112,6 +115,7 @@ server <- function(input, output, session) {
     </i></div>"
     
     map %>% 
+      # Start marker
       addCircleMarkers(data = df[1,], lng = df[1,]$LON, lat = df[1,]$LAT,
                        fillColor = "#de5272",
                        fillOpacity = 0.9, 
@@ -119,7 +123,7 @@ server <- function(input, output, session) {
                        color = "gray", 
                        weight = 1,
                        label = ~sprintf(style, df[1,]$SHIPNAME, df[1,]$DATETIME) %>% lapply(htmltools::HTML)) %>%
-      
+      # End marker
       addCircleMarkers(data = df[2,], lng = df[2,]$LON, lat = df[2,]$LAT,
                        fillColor = "#00b2a9",
                        fillOpacity = 0.9, 
